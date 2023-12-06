@@ -215,6 +215,13 @@ namespace CryptoService
                         2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11
                     }
         };
+            List<int> PPermuation = new List<int>
+                {
+                    16, 7, 20, 21, 29, 12, 28, 17,
+                    1, 15, 23, 26, 5, 18, 31, 10,
+                    2, 8, 24, 14, 32, 27, 3, 9,
+                    19, 13, 30, 6, 22, 11, 4, 25
+                };
 
             for (int i = 0; i < 16; i++)
             {
@@ -257,6 +264,9 @@ namespace CryptoService
                     byte colNum = Convert.ToByte(colNumStr, 2);
                     resR += FillToEight(Convert.ToString(S[j][rowNum * 16 + colNum], 2));
                 }
+                string endPerm = string.Empty;
+                foreach (var perm in PPermuation)
+                    endPerm += resR[perm];
 
             }
 
