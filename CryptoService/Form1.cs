@@ -247,7 +247,7 @@ namespace CryptoService
                 for (int j = 0; j < 8; j++)
                     blocks.Add(afterXOR.Substring(j * 6, 6));
 
-                string res = string.Empty;
+                string resR = string.Empty;
                 for (int j = 0; j < blocks.Count; j++)
                 {
                     //get row and column number
@@ -255,8 +255,7 @@ namespace CryptoService
                     string colNumStr = blocks[j].Substring(1, 4);
                     byte rowNum = Convert.ToByte(rowNumStr, 2);
                     byte colNum = Convert.ToByte(colNumStr, 2);
-                    res += S[j][rowNum * 16 + colNum];
-
+                    resR += FillToEight(Convert.ToString(S[j][rowNum * 16 + colNum], 2));
                 }
 
             }
