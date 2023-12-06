@@ -247,6 +247,13 @@ namespace CryptoService
                 for (int j = 0; j < 8; j++)
                     blocks.Add(afterXOR.Substring(j * 6, 6));
 
+                foreach(var block in blocks)
+                {
+                    string rowNumStr = block[0] + block[5].ToString();
+                    string colNumStr = block.Substring(1, 4);
+                    byte rowBum = Convert.ToByte(rowNumStr, 2);
+                    byte colNum = Convert.ToByte(colNumStr, 2);
+                }
 
             }
 
