@@ -245,7 +245,7 @@ namespace CryptoService
                 string handledR = string.Empty;
                 foreach (var perm in Etable)
                     handledR += R0[perm - 1];
-                //xor
+                //xor with key
                 string afterXOR = string.Empty;
                 for (int j = 0; i < 48; i++)
                     afterXOR += bool.Parse(handledR[j].ToString()) ^ bool.Parse(compressedKey[j].ToString());
@@ -264,10 +264,16 @@ namespace CryptoService
                     byte colNum = Convert.ToByte(colNumStr, 2);
                     resR += FillToEight(Convert.ToString(S[j][rowNum * 16 + colNum], 2));
                 }
+                //end perm
                 string endPerm = string.Empty;
                 foreach (var perm in PPermuation)
                     endPerm += resR[perm];
-
+                //xor with l0
+                string afterXORwithL = string.Empty;
+                for (int j = 0; i < 48; i++)
+                    afterXORwithL += bool.Parse(endPerm[j].ToString()) ^ bool.Parse(L0[j].ToString());
+                string R1 = afterXORwithL;
+                string res = R1 + R0;
             }
 
 
