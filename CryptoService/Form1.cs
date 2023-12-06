@@ -165,7 +165,7 @@ namespace CryptoService
                         4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
                         15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13
                     },
-                 new List<byte> 
+                 new List<byte>
                     {
                         15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10,
                         3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5,
@@ -186,14 +186,14 @@ namespace CryptoService
                         10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4,
                         3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14
                     },
-                 new List<byte> 
+                 new List<byte>
                     {
                         2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9,
                         14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6,
                         4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14,
                         11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3
                     },
-                 new List<byte> 
+                 new List<byte>
                     {
                         12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11,
                         10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8,
@@ -247,12 +247,16 @@ namespace CryptoService
                 for (int j = 0; j < 8; j++)
                     blocks.Add(afterXOR.Substring(j * 6, 6));
 
-                foreach(var block in blocks)
+                string res = string.Empty;
+                for (int j = 0; j < blocks.Count; j++)
                 {
-                    string rowNumStr = block[0] + block[5].ToString();
-                    string colNumStr = block.Substring(1, 4);
-                    byte rowBum = Convert.ToByte(rowNumStr, 2);
+                    //get row and column number
+                    string rowNumStr = blocks[j][0] + blocks[j][5].ToString();
+                    string colNumStr = blocks[j].Substring(1, 4);
+                    byte rowNum = Convert.ToByte(rowNumStr, 2);
                     byte colNum = Convert.ToByte(colNumStr, 2);
+                    res += S[j][rowNum * 16 + colNum];
+
                 }
 
             }
