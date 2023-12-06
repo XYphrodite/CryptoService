@@ -100,7 +100,7 @@ namespace CryptoService
                     61, 53, 45, 37, 29, 21, 13, 5, 63, 55, 47, 39, 31, 23, 15, 7
                 };
 
-
+            //permuate word
             string strWord = ListOfBytesToString(word);
             var permutatedData = string.Empty;
             foreach (var perm in permutationTable)
@@ -115,6 +115,7 @@ namespace CryptoService
                 };
 
             string strKey = ListOfBytesToString(key.ToList());
+            //permuate key
             var permutatedKey = string.Empty;
             foreach (var perm in forKey)
                 permutatedKey += strKey[perm - 1].ToString();
@@ -138,12 +139,27 @@ namespace CryptoService
                     { 15, 2 },
                     { 16, 1 }
                 };
+            List<int> keyCompression = new List<int>
+                {
+                    14, 17, 11, 24, 1, 5, 3, 28, 15, 6, 21, 10, 23, 19, 12, 4,
+                    26, 8, 16, 7, 27, 20, 13, 2, 41, 52, 31, 37, 47, 55, 30, 40,
+                    51, 45, 33, 48, 44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32
+                };
 
             for (int i = 0; i < 16; i++)
             {
+                //split key
                 string lKey = strKey.Substring(0, 28);
                 string rKey = strKey.Substring(32, 28);
-
+                //shift bytes
+                lKey = ShiftBytes(lKey, RoundShift.GetValueOrDefault(i));
+                rKey = ShiftBytes(rKey, RoundShift.GetValueOrDefault(i));
+                
+                string fullKey = lKey + rKey;
+                //compress key
+                string compressedKey = string.Empty;
+                foreach (var perm in keyCompression)
+                    compressedKey += fullKey[perm - 1];
             }
 
 
