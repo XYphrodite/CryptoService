@@ -166,7 +166,7 @@ namespace CryptoService
             foreach (var word in encWords)
                 dec += DESDecrypt(word, key);
             var decBinaryData = BinaryStringToBytes(dec);
-            //decryptedTextRTB.Text = decBinaryData.
+            decryptedTextRTB.Text = BytesToString(decBinaryData);
 
 
 
@@ -224,14 +224,11 @@ namespace CryptoService
 
                 return wordsToEnc;
             }
-            string TTT(List<byte> data)
+            string BytesToString(List<byte> data)
             {
                 string toReturn = string.Empty;
                 ASCIIEncoding encoding = new ASCIIEncoding();
-                foreach(var d in data)
-                {
-
-                }
+                toReturn += encoding.GetString(data.ToArray());
                 return toReturn;
             }
         }
@@ -274,12 +271,18 @@ namespace CryptoService
         {
             //unpermuate word
             string strWord = ListOfBytesToString(word);
-            char[] unpermutatedArr = new char[64];
+            char[] unpermutatedWordArr = new char[64];
             for(int i=0;i< permutationTable.Count; i++)
-            {
-                unpermutatedArr[permutationTable[i]-1] = strWord[i];
-            }
-            string unpermutatedData = new string(unpermutatedArr);
+                unpermutatedWordArr[permutationTable[i]-1] = strWord[i];
+            string unpermutatedData = new string(unpermutatedWordArr);
+            //unpermuate key
+            string unpermutatedKey = ListOfBytesToString(word);
+            char[] unpermutatedKeyArr = new char[64];
+            for (int i = 0; i < forKey.Count; i++)
+                unpermutatedKeyArr[forKey[i] - 1] = unpermutatedKey[i];
+            string unpermutatedKeyData = (new string(unpermutatedKeyArr)).Remove('\0');
+
+
             return unpermutatedData;
         }
 
@@ -291,7 +294,7 @@ namespace CryptoService
             foreach (var perm in permutationTable)
                 permutatedData += strWord[perm - 1].ToString();
 
-            return permutatedData;
+            
 
             string strKey = ListOfBytesToString(key.ToList());
             //permuate key
@@ -299,7 +302,7 @@ namespace CryptoService
             foreach (var perm in forKey)
                 permutatedKey += strKey[perm - 1].ToString();
 
-
+            return permutatedData;
             string L0 = permutatedData.Substring(0, 32);
             string R0 = permutatedData.Substring(32, 32);
             string R1 = string.Empty;
