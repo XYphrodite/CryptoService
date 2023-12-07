@@ -30,16 +30,52 @@ namespace CryptoService
             //var s = Convert.FromBase64String(base64Key);
 
             ciphroTextRTB.Text = string.Empty;
+            string ct = string.Empty;
             foreach (var word in words)
             {
-                ciphroTextRTB.Text += DESCrypt(word, key);
+                ct += DESCrypt(word, key);
+            }
+
+            List<byte> BinaryData = new List<byte>();
+            for (int i = 0; i < ct.Length; i += 8)
+            {
+                string oneByte = ct.Substring(i, 8);
+                BinaryData.Add(Convert.ToByte(oneByte, 2));
+            }
+            ciphroTextRTB.Text = Convert.ToBase64String(BinaryData.ToArray());
+
+
+            //---------------------------
+            //get key
+            //string base64Key = keyRTB.Text;
+            //byte[] key = Convert.FromBase64String(base64Key);
+            //get ciphrotext
+            var ciphrotext = Convert.FromBase64String(ciphroTextRTB.Text);
+            var encWords = GetListOf8ByteWords(ciphrotext);
+            foreach (var word in encWords)
+            {
+                DESDecrypt(word, key);
             }
 
 
 
 
+            List<List<byte>> GetListOf8ByteWords(byte[] data)
+            {
+                //get 8byte words
+                List<List<byte>> eightByteWords = new List<List<byte>>();
+                for (int i = 0; i < data.Length; i += 8)
+                {
+                    List<byte> word = new List<byte>();
+                    for (int j = 0; j < 8; j++)
+                    {
+                        word.Add(data[i + j]);
+                    }
+                    eightByteWords.Add(word);
 
-
+                }
+                return eightByteWords;
+            }
             List<List<byte>> SplitTextTo8BytesWord(string text)
             {
                 //get encodeing
@@ -79,33 +115,20 @@ namespace CryptoService
 
                 return wordsToEnc;
             }
-            List<byte> MergeLists(List<List<byte>> lists)
-            {
-                List<byte> list = new List<byte>();
-                foreach (var l in lists)
-                {
-                    foreach (var b in l)
-                    {
-                        list.Add(b);
-                    }
-                }
-                return list;
-            }
-
         }
 
-        private string ToBinaryFromString(string v)
-        {
-            ASCIIEncoding encoding = new ASCIIEncoding();
-            //text to bytes
-            var bytes = encoding.GetBytes(v).ToList();
-            string toReturn = string.Empty;
-            foreach (var b in bytes)
-            {
-                toReturn += FillToEight(Convert.ToString(b, 2));
-            }
-            return toReturn;
-        }
+        //private string ToBinaryFromString(string v)
+        //{
+        //    ASCIIEncoding encoding = new ASCIIEncoding();
+        //    //text to bytes
+        //    var bytes = encoding.GetBytes(v).ToList();
+        //    string toReturn = string.Empty;
+        //    foreach (var b in bytes)
+        //    {
+        //        toReturn += FillToEight(Convert.ToString(b, 2));
+        //    }
+        //    return toReturn;
+        //}
 
         private void decryptBtnClick(object sender, EventArgs e)//dec
         {
@@ -114,18 +137,36 @@ namespace CryptoService
             byte[] key = Convert.FromBase64String(base64Key);
             //get ciphrotext
             var ciphrotext = Convert.FromBase64String(ciphroTextRTB.Text);
+            var words = GetListOf8ByteWords(ciphrotext);
+            foreach(var word in words)
+            {
+                DESDecrypt(word, key);
+            }
 
 
 
-            //List<List<byte>> GetListOf8ByteWords(string data)
-            //{
-            //    //get 8byte words
-            //    List<string> eightByteWords = new List<string>();
-            //    for (int i = 0; i < data.Length; i += 64)
-            //    {
 
-            //    }
-            //}
+            List<List<byte>> GetListOf8ByteWords(byte[] data)
+            {
+                //get 8byte words
+                List<List<byte>> eightByteWords = new List<List<byte>>();
+                for (int i = 0; i < data.Length;i+=8)
+                {
+                    List<byte> word = new List<byte>();
+                    for (int j = 0; j < 8; j++)
+                    {
+                        word.Add(data[i+j]);
+                    }
+                    eightByteWords.Add(word);
+
+                }
+                return eightByteWords;
+            }
+        }
+
+        private void DESDecrypt(List<byte> word, byte[] key)
+        {
+            
         }
 
         string DESCrypt(List<byte> word, byte[] key)
@@ -316,16 +357,10 @@ namespace CryptoService
 
             //return ToStringFromBinary(R1 + R0);
             string res = R1 + R0;
+            return res;
 
 
 
-            List<byte> BinaryData = new List<byte>();
-            for (int i = 0; i < res.Length; i += 8)
-            {
-                string oneByte = res.Substring(i, 8);
-                BinaryData.Add(Convert.ToByte(oneByte, 2));
-            }
-            return Convert.ToBase64String(BinaryData.ToArray());
 
 
 
