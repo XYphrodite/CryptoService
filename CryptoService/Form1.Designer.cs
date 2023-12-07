@@ -36,6 +36,8 @@
             decryptedTextRTB = new RichTextBox();
             encryptBtn = new Button();
             decryptBtn = new Button();
+            keyRTB = new RichTextBox();
+            LeyLabel = new Label();
             SuspendLayout();
             // 
             // label1
@@ -109,11 +111,30 @@
             decryptBtn.UseVisualStyleBackColor = true;
             decryptBtn.Click += decryptBtnClick;
             // 
+            // keyRTB
+            // 
+            keyRTB.Location = new Point(560, 48);
+            keyRTB.Name = "keyRTB";
+            keyRTB.Size = new Size(296, 146);
+            keyRTB.TabIndex = 8;
+            keyRTB.Text = "";
+            // 
+            // LeyLabel
+            // 
+            LeyLabel.AutoSize = true;
+            LeyLabel.Location = new Point(560, 30);
+            LeyLabel.Name = "LeyLabel";
+            LeyLabel.Size = new Size(26, 15);
+            LeyLabel.TabIndex = 9;
+            LeyLabel.Text = "Key";
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(564, 375);
+            ClientSize = new Size(868, 375);
+            Controls.Add(LeyLabel);
+            Controls.Add(keyRTB);
             Controls.Add(decryptBtn);
             Controls.Add(encryptBtn);
             Controls.Add(decryptedTextRTB);
@@ -138,5 +159,8 @@
         private RichTextBox decryptedTextRTB;
         private Button encryptBtn;
         private Button decryptBtn;
+        private Label KeyLabel;
+        private RichTextBox keyRTB;
+        private Label LeyLabel;
     }
 }

@@ -23,9 +23,16 @@ namespace CryptoService
             //Get random key
             Random r = new Random();
             r.NextBytes(key);
+            keyRTB.Text = string.Empty;
+            //key = [72, 73, 75, 68, 88, 35, 79, 89];
+            var base64Key = Convert.ToBase64String(key);
+            keyRTB.Text += base64Key + Environment.NewLine;
+            //var s = Convert.FromBase64String(base64Key);
+
+            ciphroTextRTB.Text = string.Empty;
             foreach (var word in words)
             {
-                DESCrypt(word, key);
+                ciphroTextRTB.Text += DESCrypt(word, key);
             }
 
 
@@ -43,6 +50,7 @@ namespace CryptoService
                 List<List<byte>> wordsToEnc = new List<List<byte>>();
                 //splitting
                 var word = new List<byte>();
+                if (bytes.Count is 0) return wordsToEnc;
                 for (int i = 0, w = 0; (w * 8 + i) < bytes.Count;)
                 {
                     if (i == 8)
@@ -67,6 +75,7 @@ namespace CryptoService
                     }
                     wordsToEnc.Add(word);
                 }
+                else wordsToEnc.Add(word);
 
                 return wordsToEnc;
             }
@@ -85,12 +94,41 @@ namespace CryptoService
 
         }
 
+        private string ToBinaryFromString(string v)
+        {
+            ASCIIEncoding encoding = new ASCIIEncoding();
+            //text to bytes
+            var bytes = encoding.GetBytes(v).ToList();
+            string toReturn = string.Empty;
+            foreach (var b in bytes)
+            {
+                toReturn += FillToEight(Convert.ToString(b, 2));
+            }
+            return toReturn;
+        }
 
         private void decryptBtnClick(object sender, EventArgs e)//dec
         {
+            //get key
+            string base64Key = keyRTB.Text;
+            byte[] key = Convert.FromBase64String(base64Key);
+            //get ciphrotext
+            var ciphrotext = Convert.FromBase64String(ciphroTextRTB.Text);
+
+
+
+            //List<List<byte>> GetListOf8ByteWords(string data)
+            //{
+            //    //get 8byte words
+            //    List<string> eightByteWords = new List<string>();
+            //    for (int i = 0; i < data.Length; i += 64)
+            //    {
+
+            //    }
+            //}
         }
 
-        void DESCrypt(List<byte> word, byte[] key)
+        string DESCrypt(List<byte> word, byte[] key)
         {
             List<byte> permutationTable = new List<byte>
                 {
@@ -222,7 +260,9 @@ namespace CryptoService
                     2, 8, 24, 14, 32, 27, 3, 9,
                     19, 13, 30, 6, 22, 11, 4, 25
                 };
-
+            string L0 = permutatedData.Substring(0, 32);
+            string R0 = permutatedData.Substring(32, 32);
+            string R1 = string.Empty;
             for (int i = 0; i < 16; i++)
             {
                 //split key
@@ -238,17 +278,14 @@ namespace CryptoService
                 foreach (var perm in keyCompression)
                     compressedKey += fullKey[perm - 1];
 
-                string L0 = permutatedData.Substring(0, 32);
-                string R0 = permutatedData.Substring(32, 32);
-
                 //work with R
                 string handledR = string.Empty;
                 foreach (var perm in Etable)
                     handledR += R0[perm - 1];
                 //xor with key
                 string afterXOR = string.Empty;
-                for (int j = 0; i < 48; i++)
-                    afterXOR += bool.Parse(handledR[j].ToString()) ^ bool.Parse(compressedKey[j].ToString());
+                for (int j = 0; j < 48; j++)
+                    afterXOR += MyXOR(handledR[j], compressedKey[j]);
                 //split to blocks
                 List<string> blocks = new List<string>();
                 for (int j = 0; j < 8; j++)
@@ -270,35 +307,66 @@ namespace CryptoService
                     endPerm += resR[perm];
                 //xor with l0
                 string afterXORwithL = string.Empty;
-                for (int j = 0; i < 48; i++)
-                    afterXORwithL += bool.Parse(endPerm[j].ToString()) ^ bool.Parse(L0[j].ToString());
-                string R1 = afterXORwithL;
-                string res = R1 + R0;
+                for (int j = 0; j < 32; j++)
+                    afterXORwithL += MyXOR(endPerm[j], L0[j]);
+                R1 = afterXORwithL;
+                L0 = R0;
             }
+            //return R1 + R0;
+
+            //return ToStringFromBinary(R1 + R0);
+            string res = R1 + R0;
 
 
 
-
-
-
-
-
-            string ListOfBytesToString(List<byte> data)
+            List<byte> BinaryData = new List<byte>();
+            for (int i = 0; i < res.Length; i += 8)
             {
-                string strData = string.Empty;
-                foreach (var d in data)
-                    strData += FillToEight(Convert.ToString(d, 2));
-                return strData;
+                string oneByte = res.Substring(i, 8);
+                BinaryData.Add(Convert.ToByte(oneByte, 2));
             }
-            string FillToEight(string v)
-            {
-                while (v.Length < 8)
-                    v = "0" + v;
-                return v;
-            }
+            return Convert.ToBase64String(BinaryData.ToArray());
+
+
+
 
             string ShiftBytes(string str, int amount)
                 => str.Substring(amount, str.Length - amount) + str.Substring(str.Length - amount, amount);
+            char MyXOR(char a, char b)
+            {
+                bool bA = a == '1' ? true : false;
+                bool bB = b == '1' ? true : false;
+                bool x = bA ^ bB;
+                return x == true ? '1' : '0';
+            }
+
+        }
+        //string ToStringFromBinary(string str)
+        //{
+        //    List<byte> BinaryData = new List<byte>();
+        //    for (int i = 0; i < str.Length; i += 8)
+        //    {
+        //        string oneByte = str.Substring(i, 8);
+        //        BinaryData.Add(Convert.ToByte(oneByte, 2));
+
+        //    }
+        //    ASCIIEncoding encoding = new ASCIIEncoding();
+        //    var res = encoding.GetString(BinaryData.ToArray());
+        //    return res;
+        //}
+        string FillToEight(string v)
+        {
+            while (v.Length < 8)
+                v = "0" + v;
+            return v;
+        }
+        string ListOfBytesToString(List<byte> data)
+        {
+            string strData = string.Empty;
+            foreach (var d in data)
+                strData += FillToEight(Convert.ToString(d, 2));
+            return strData;
         }
     }
 }
+
