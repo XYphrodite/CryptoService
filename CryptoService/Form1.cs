@@ -71,8 +71,8 @@ namespace CryptoService
         private void decryptBtnClick(object sender, EventArgs e)
         {
             var key = ReadKey();
-            //var decrypted = _des_Crypt.Decrypt(ciphroTextRTB.Text, key, encoding);
-            //decryptedTextRTB.Text = Convert.ToBase64String(decrypted.ToArray());
+            var decrypted = _des_Crypt.Crypt(ciphroTextRTB.Text, key, DES_Crypt.Mode.Decryptor);
+            decryptedTextRTB.Text = _des_Crypt.GetText(decrypted.ToArray());
         }
 
         private byte[] GenerateKey()

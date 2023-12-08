@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,14 +20,29 @@ namespace CryptoService.Service
         {
             //check
             if (string.IsNullOrEmpty(initialtext)) return new List<byte>();
-
-            //set
-            _initialText = initialtext;
-            //split text to 64bit blocks
-            SplitTextTo8BytesWord(out List<List<byte>> words);
+            List<List<byte>> words = new();
+            switch (mode)
+            {
+                case Mode.Encryptor:
+                    //set
+                    _initialText = initialtext;
+                    //split text to 64bit blocks
+                    SplitTextTo8BytesWord(out List<List<byte>> w2);
+                    words = w2;
+                    break;
+                case Mode.Decryptor:
+                        var w1 = Convert.FromBase64String(initialtext);
+                    for (var i = 0; i < w1.Count(); i+=8)
+                    {
+                        var word = new List<byte> { w1[i], w1[i+1], w1[i + 2], w1[i + 3], w1[i + 4], w1[i + 5], w1[i + 6], w1[i + 7] };
+                        words.Add(word);
+                    }
+                    break;
+                default: return new List<byte>();
+            }
 
             //create container for keys
-            ulong[] keys48b = new ulong[16];
+            List<ulong> keys48b = new List<ulong>(16);
             //create L and R
             uint N1 = 0, N2 = 0;
 
@@ -52,7 +68,9 @@ namespace CryptoService.Service
 
         }
 
-        private void feistel_cipher(Mode mode, ref uint N1, ref uint N2, ulong[] keys48b)
+        public string GetText(IEnumerable<byte> data) => _encoding.GetString(data.ToArray());
+
+        private void feistel_cipher(Mode mode, ref uint N1, ref uint N2, List<ulong> keys48b)
         {
             switch (mode)
             {
@@ -65,7 +83,7 @@ namespace CryptoService.Service
                     }
                 case Mode.Decryptor:
                     {
-                        for (byte round = 15; round >= 0; --round)
+                        for (sbyte round = 15; round >= 0; round--)
                             round_feistel_cipher(ref N1, ref N2, keys48b[round]);
                         swap(ref N1, ref N2);
                         break;
@@ -109,18 +127,18 @@ namespace CryptoService.Service
 
         uint substitutions(ulong block48b)
         {
-            IEnumerable<byte> blocks4b = new List<byte>(), blocks6b = new List<byte>();
+            List<byte> blocks4b = new List<byte>(), blocks6b = new List<byte>();
             split_48bits_to_6bits(block48b, ref blocks6b);
             substitution_6bits_to_4bits(blocks6b, ref blocks4b);
             return join_4bits_to_32bits(blocks4b);
 
-            void split_48bits_to_6bits(ulong block48b, ref IEnumerable<byte> blocks6b)
+            void split_48bits_to_6bits(ulong block48b, ref List<byte> blocks6b)
             {
                 for (byte i = 0; i < 8; ++i)
-                    blocks6b.Append((byte)((block48b >> (58 - (i * 6))) << 2));
+                    blocks6b.Add((byte)((block48b >> (58 - (i * 6))) << 2));
             }
 
-            void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, ref IEnumerable<byte> blocks4b)
+            void substitution_6bits_to_4bits(List<byte> blocks6b, ref List<byte> blocks4b)
             {
                 byte block2b, block4b;
 
@@ -128,11 +146,11 @@ namespace CryptoService.Service
                 {
                     block2b = extreme_bits(blocks6b.ElementAt(i));
                     block4b = middle_bits(blocks6b.ElementAt(i));
-                    blocks4b.Append(__Sbox[i][block2b][block4b]);
+                    blocks4b.Add(__Sbox[i][block2b][block4b]);
 
                     block2b = extreme_bits(blocks6b.ElementAt(i + 1));
                     block4b = middle_bits(blocks6b.ElementAt(i + 1));
-                    blocks4b.Append((byte)((blocks4b.ElementAt(j) << 4) | __Sbox[i + 1][block2b][block4b]));
+                    blocks4b.Add((byte)((blocks4b.ElementAt(j) << 4) | __Sbox[i + 1][block2b][block4b]));
                 }
             }
 
@@ -205,14 +223,67 @@ namespace CryptoService.Service
                 new_block64b |= ((block64b >> (64 - __IP[i])) & 0x01) << (63 - i);
             return new_block64b;
         }
+        void key_expansion(ulong key64b, ref List<ulong> keys48b)
+        {
+            uint K1 = 0, K2 = 0;
+            key_permutation_56bits_to_28bits(key64b, ref K1, ref K2);
+            key_expansion_to_48bits(K1, K2, ref keys48b);
+        }
+
+        void key_permutation_56bits_to_28bits(ulong block56b, ref uint block28b_1, ref uint block28b_2)
+        {
+            for (byte i = 0; i < 28; ++i)
+            {
+                block28b_1 |= (uint)(((block56b >> (64 - __K1P[i])) & 0x01) << (31 - i));
+                block28b_2 |= (uint)(((block56b >> (64 - __K2P[i])) & 0x01) << (31 - i));
+            }
+        }
+
+        void key_expansion_to_48bits(uint block28b_1, uint block28b_2, ref List<ulong> keys48b)
+        {
+            ulong block56b;
+            byte n;
+            for (byte i = 0; i < 16; ++i)
+            {
+                switch (i)
+                {
+                    case 0: case 1: case 8: case 15: n = 1; break;
+                    default: n = 2; break;
+                }
+
+                block28b_1 = LSHIFT_28BIT(block28b_1, n);
+                block28b_2 = LSHIFT_28BIT(block28b_2, n);
+                block56b = join_28bits_to_56bits(block28b_1, block28b_2);
+                keys48b.Add(key_contraction_permutation(block56b));
+            }
+
+
+            ulong join_28bits_to_56bits(uint block28b_1, uint block28b_2)
+            {
+                ulong block56b;
+                block56b = (block28b_1 >> 4);
+                block56b = ((block56b << 32) | block28b_2) << 4;
+                return block56b;
+            }
+
+            uint LSHIFT_28BIT(uint x, byte L) => (uint)((((x) << (L)) | ((x) >> (-(L) & 27))) & (((ulong)1 << 32) - 1));
+        }
+
+        ulong key_contraction_permutation(ulong block56b)
+        {
+            ulong block48b = 0;
+            for (byte i = 0; i < 48; ++i)
+            {
+                block48b |= ((block56b >> (64 - __CP[i])) & 0x01) << (63 - i);
+            }
+            return block48b;
+        }
 
         private void SplitTextTo8BytesWord(out List<List<byte>> words)
         {
             words = new List<List<byte>>();
             //text to bytes
             var bytes = _encoding.GetBytes(_initialText).ToList();
-            //split text to 8bytes words
-            List<List<byte>> wordsToEnc = new List<List<byte>>();
             //splitting
             var word = new List<byte>();
             if (bytes.Count is 0)
@@ -224,7 +295,7 @@ namespace CryptoService.Service
             {
                 if (i == 8)
                 {
-                    wordsToEnc.Add(word);
+                    words.Add(word);
                     word = new List<byte>();
                     w += 1;
                     i = 0;
@@ -240,9 +311,9 @@ namespace CryptoService.Service
             {
                 while (word.Count < 8)
                     word.Add(0);
-                wordsToEnc.Add(word);
+                words.Add(word);
             }
-            else wordsToEnc.Add(word);
+            else words.Add(word);
         }
 
 
@@ -326,6 +397,20 @@ namespace CryptoService.Service
             16, 7 , 20, 21, 29, 12, 28, 17, 1 , 15, 23, 26, 5 , 18, 31, 10,
             2 , 8 , 24, 14, 32, 27, 3 , 9 , 19, 13, 30, 6 , 22, 11, 4 , 25,
         };
+        private static readonly byte[] __K1P = {
+            57, 49, 41, 33, 25, 17, 9 , 1 , 58, 50, 42, 34, 26, 18,
+            10, 2 , 59, 51, 43, 35, 27, 19, 11, 3 , 60, 52, 44, 36,
+        };
+        private static readonly byte[] __K2P = {
+            63, 55, 47, 39, 31, 23, 15, 7 , 62, 54, 46, 38, 30, 22,
+            14, 6 , 61, 53, 45, 37, 29, 21, 13, 5 , 28, 20, 12, 4 ,
+        };
+        private static readonly byte[] __CP = {
+                14, 17, 11, 24, 1 , 5 , 3 , 28, 15, 6 , 21, 10,
+                23, 19, 12, 4 , 26, 8 , 16, 7 , 27, 20, 13, 2 ,
+                41, 52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48,
+                44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32,
+            };
 
         public enum Mode : byte
         {
