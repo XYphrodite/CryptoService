@@ -21,7 +21,7 @@ namespace CryptoService
             var key = GenerateKey();
             keyRTB.Text = Convert.ToBase64String(key) + Environment.NewLine;
             //encrypt
-            var encrypted = cryptoWorker.des.Crypt(initTextRTB.Text, key, cryptoWorker.Mode.Encryptor);
+            var encrypted = cryptoWorker.des.Crypt(initTextRTB.Text, key, CryptoWorker.DES.Mode.Encryptor);
             //set text
             ciphroTextRTB.Text = Convert.ToBase64String(encrypted.ToArray());
         }
@@ -29,7 +29,7 @@ namespace CryptoService
         private void decryptBtnClick(object sender, EventArgs e)
         {
             var key = ReadKey();
-            var decrypted = cryptoWorker.des.Crypt(ciphroTextRTB.Text, key, cryptoWorker.Mode.Decryptor);
+            var decrypted = cryptoWorker.des.Crypt(ciphroTextRTB.Text, key, CryptoWorker.DES.Mode.Decryptor);
             decryptedTextRTB.Text = cryptoWorker.des.GetText(decrypted.ToArray());
         }
 

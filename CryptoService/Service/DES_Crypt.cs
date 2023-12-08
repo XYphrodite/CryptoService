@@ -13,7 +13,7 @@ namespace CryptoService.Service
         public DES des;
         public CryptoWorker(Encoding encoding)
         {
-            _des = new DES(encoding);
+            des = new DES(encoding);
         }
         public class DES
         {
@@ -416,11 +416,13 @@ namespace CryptoService.Service
                 41, 52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48,
                 44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32,
             };
+
+            public enum Mode : byte
+            {
+                Encryptor,
+                Decryptor
+            }
         }
-        public enum Mode : byte
-        {
-            Encryptor,
-            Decryptor
-        }
+
     }
 }
