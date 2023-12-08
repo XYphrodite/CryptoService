@@ -8,7 +8,7 @@ namespace CryptoService
 {
     public partial class MainForm : Form
     {
-        private DES_Crypt _des_Crypt = new DES_Crypt(Encoding.UTF8);
+        private CryptoWorker cryptoWorker = new CryptoWorker(Encoding.UTF8);
 
 
         public MainForm()
@@ -21,7 +21,7 @@ namespace CryptoService
             var key = GenerateKey();
             keyRTB.Text = Convert.ToBase64String(key) + Environment.NewLine;
             //encrypt
-            var encrypted = _des_Crypt.Crypt(initTextRTB.Text, key, DES_Crypt.Mode.Encryptor);
+            var encrypted = cryptoWorker.des.Crypt(initTextRTB.Text, key, cryptoWorker.Mode.Encryptor);
             //set text
             ciphroTextRTB.Text = Convert.ToBase64String(encrypted.ToArray());
         }
@@ -29,8 +29,8 @@ namespace CryptoService
         private void decryptBtnClick(object sender, EventArgs e)
         {
             var key = ReadKey();
-            var decrypted = _des_Crypt.Crypt(ciphroTextRTB.Text, key, DES_Crypt.Mode.Decryptor);
-            decryptedTextRTB.Text = _des_Crypt.GetText(decrypted.ToArray());
+            var decrypted = cryptoWorker.des.Crypt(ciphroTextRTB.Text, key, cryptoWorker.Mode.Decryptor);
+            decryptedTextRTB.Text = cryptoWorker.des.GetText(decrypted.ToArray());
         }
 
         private byte[] GenerateKey()
