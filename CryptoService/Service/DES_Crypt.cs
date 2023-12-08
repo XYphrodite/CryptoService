@@ -221,15 +221,6 @@ namespace CryptoService.Service
         {
             throw new NotImplementedException();
         }
-        private ulong join_8bits_to_64bits(IEnumerable<byte> arr)
-        {
-            ulong block64b = 0;
-            for (int i = 0; i < arr.Count(); i++)
-            {
-                block64b = (block64b << 8) | arr.ElementAt(i);
-            }
-            return block64b;
-        }
 
 
         private static readonly byte[] __IP =
