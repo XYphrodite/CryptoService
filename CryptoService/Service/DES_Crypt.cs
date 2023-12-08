@@ -88,11 +88,36 @@ namespace CryptoService.Service
         }
         uint substitutions(ulong block48b)
         {
-            byte[] blocks4b, blocks6b = { 0 };
-            split_48bits_to_6bits(block48b, blocks6b);
-            substitution_6bits_to_4bits(blocks6b, blocks4b);
+            IEnumerable<byte> blocks4b, blocks6b = new List<byte> { 0 };
+            split_48bits_to_6bits(block48b, ref blocks6b);
+            substitution_6bits_to_4bits(blocks6b, ref blocks4b);
             return join_4bits_to_32bits(blocks4b);
         }
+
+        void split_48bits_to_6bits(ulong block48b, ref IEnumerable<byte> blocks6b)
+        {
+            for (byte i = 0; i < 8; ++i)
+                blocks6b.Append((byte)((block48b >> (58 - (i * 6))) << 2));
+        }
+        void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, IEnumerable<byte> blocks4b)
+        {
+            byte block2b, block4b;
+
+            for (byte i = 0, j = 0; i < 8; i += 2, ++j)
+            {
+                block2b = extreme_bits(blocks6b.ElementAt(i));
+                block4b = middle_bits(blocks6b.ElementAt(i));
+                blocks4b.Append(__Sbox[i][block2b][block4b])
+
+                block2b = extreme_bits(blocks6b.ElementAt(i+1));
+                block4b = middle_bits(blocks6b.ElementAt(i)+1);
+                blocks4b.Append((blocks4b.ElementAt(j) << 4) | __Sbox[i + 1][block2b][block4b]);
+            }
+        }
+
+        byte extreme_bits(byte block6b) => (byte)(((block6b >> 6) & 0x2) | ((block6b >> 2) & 0x1));
+
+        byte middle_bits(byte block6b) => (byte)((block6b >> 3) & 0xF);
 
         ulong expansion_permutation(uint block32b)
         {
@@ -207,7 +232,7 @@ namespace CryptoService.Service
                     36, 4, 44, 12, 52, 20, 60, 28, 35, 3, 43, 11, 51, 19, 59, 27,
                     34, 2, 42, 10, 50, 18, 58, 26, 33, 1, 41, 9 , 49, 17, 57, 25,
                 };
-        private static readonly byte[] __EP = 
+        private static readonly byte[] __EP =
                 {
                     32, 1, 2, 3, 4, 5,
                     4, 5, 6, 7, 8, 9,
