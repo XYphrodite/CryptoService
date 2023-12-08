@@ -88,7 +88,7 @@ namespace CryptoService.Service
         }
         uint substitutions(ulong block48b)
         {
-            IEnumerable<byte> blocks4b, blocks6b = new List<byte> { 0 };
+            IEnumerable<byte> blocks4b = new List<byte>(), blocks6b = new List<byte>();
             split_48bits_to_6bits(block48b, ref blocks6b);
             substitution_6bits_to_4bits(blocks6b, ref blocks4b);
             return join_4bits_to_32bits(blocks4b);
@@ -99,7 +99,7 @@ namespace CryptoService.Service
             for (byte i = 0; i < 8; ++i)
                 blocks6b.Append((byte)((block48b >> (58 - (i * 6))) << 2));
         }
-        void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, IEnumerable<byte> blocks4b)
+        void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, ref IEnumerable<byte> blocks4b)
         {
             byte block2b, block4b;
 
