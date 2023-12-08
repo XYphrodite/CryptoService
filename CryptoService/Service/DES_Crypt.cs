@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CryptoService.Service
 {
-    public class CryptoWorker
+    public partial class CryptoWorker
     {
         public DES des;
         public CryptoWorker(Encoding encoding)
