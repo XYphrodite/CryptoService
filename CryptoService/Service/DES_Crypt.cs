@@ -10,12 +10,17 @@ namespace CryptoService.Service
     public class DES_Crypt
     {
         string _initialText = string.Empty;
-        public IEnumerable<byte> Encrypt(string initialtext, byte[] key, Encoding encoding)
+        private Encoding _encoding;
+        public DES_Crypt(Encoding encoding)
+        {
+            _encoding = encoding;
+        }
+        public IEnumerable<byte> Crypt(string initialtext, byte[] key, Mode mode)
         {
             //check
-            if(string.IsNullOrEmpty(initialtext)) return new List<byte>();
+            if (string.IsNullOrEmpty(initialtext)) return new List<byte>();
 
-            //set text
+            //set
             _initialText = initialtext;
             //split text to 64bit blocks
             SplitTextTo8BytesWord(out List<List<byte>> words);
@@ -23,7 +28,7 @@ namespace CryptoService.Service
             //create container for keys
             ulong[] keys48b = new ulong[16];
             //create L and R
-            UInt32 N1, N2;
+            uint N1 = 0, N2 = 0;
 
             key_expansion(join_8bits_to_64bits(key), ref keys48b);
 
@@ -31,53 +36,71 @@ namespace CryptoService.Service
             {
                 split_64bits_to_32bits(
                     initial_permutation(
-                        join_8bits_to_64bits(words, i)
+                        join_8bits_to_64bits(words[i])
                     ),
-                    &N1, &N2
+                    ref N1, ref N2
                 );
                 feistel_cipher(mode, &N1, &N2, keys48b);
                 split_64bits_to_8bits(
                     final_permutation(
                         join_32bits_to_64bits(N1, N2)
                     ),
-                    (to + i)
+                    words[i]
                 );
             }
 
+        }
 
+        private void split_64bits_to_8bits(ulong block64b, IEnumerable<byte> blocks8b)
+        {
+            for (byte i = 0; i < 8; ++i)
+                blocks8b.Append((byte)(block64b >> ((7 - i) * 8)));
+        }
 
-
-
-
-
-
-
-            string ShiftBytes(string str, int amount)
-                => str.Substring(amount, str.Length - amount) + str.Substring(str.Length - amount, amount);
-            char MyXOR(char a, char b)
+        private ulong final_permutation(ulong block64b)
+        {
+            ulong new_block64b = 0;
+            for (byte i = 0; i < 64; ++i)
             {
-                bool bA = a == '1' ? true : false;
-                bool bB = b == '1' ? true : false;
-                bool x = bA ^ bB;
-                return x == true ? '1' : '0';
+                new_block64b |= ((block64b >> (64 - __FP[i])) & 0x01) << (63 - i);
             }
+            return new_block64b;
+        }
 
+        private ulong join_32bits_to_64bits(uint block32b_1, uint block32b_2)
+        {
+            ulong block64b;
+            block64b = (ulong)block32b_1;
+            block64b = (ulong)(block64b << 32) | block32b_2;
+            return block64b;
+        }
+
+        private void split_64bits_to_32bits(ulong block64b, ref uint block32b_1, ref uint block32b_2)
+        {
+            block32b_1 = (uint)(block64b >> 32);
+            block32b_2 = (uint)(block64b);
+        }
+
+        private ulong initial_permutation(ulong block64b)
+        {
+            ulong new_block64b = 0;
+            for (byte i = 0; i < 64; ++i)
+                new_block64b |= ((block64b >> (64 - __IP[i])) & 0x01) << (63 - i);
+            return new_block64b;
         }
 
         private void SplitTextTo8BytesWord(out List<List<byte>> words)
         {
             words = new List<List<byte>>();
-            //get encodeing
-            ASCIIEncoding encoding = new ASCIIEncoding();
             //text to bytes
-            var bytes = encoding.GetBytes(_initialText).ToList();
+            var bytes = _encoding.GetBytes(_initialText).ToList();
             //split text to 8bytes words
             List<List<byte>> wordsToEnc = new List<List<byte>>();
             //splitting
             var word = new List<byte>();
             if (bytes.Count is 0)
             {
-                MessageBox.Show("No text","No text",MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No text", "No text", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             for (int i = 0, w = 0; (w * 8 + i) < bytes.Count;)
@@ -117,28 +140,27 @@ namespace CryptoService.Service
             }
             return block64b;
         }
-        string FillToEight(string v)
+
+
+        private static readonly byte[] __IP =
+                {
+                    58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4,
+                    62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8,
+                    57, 49, 41, 33, 25, 17, 9, 1,  59, 51, 43, 35, 27, 19, 11, 3,
+                    61, 53, 45, 37, 29, 21, 13, 5, 63, 55, 47, 39, 31, 23, 15, 7
+                };
+        private static readonly byte[] __FP = 
+                {
+                    40, 8, 48, 16, 56, 24, 64, 32, 39, 7, 47, 15, 55, 23, 63, 31,
+                    38, 6, 46, 14, 54, 22, 62, 30, 37, 5, 45, 13, 53, 21, 61, 29,
+                    36, 4, 44, 12, 52, 20, 60, 28, 35, 3, 43, 11, 51, 19, 59, 27,
+                    34, 2, 42, 10, 50, 18, 58, 26, 33, 1, 41, 9 , 49, 17, 57, 25,
+                };
+
+        public enum Mode : byte
         {
-            while (v.Length < 8)
-                v = "0" + v;
-            return v;
-        }
-        string ListOfBytesToString(List<byte> data)
-        {
-            string strData = string.Empty;
-            foreach (var d in data)
-                strData += FillToEight(Convert.ToString(d, 2));
-            return strData;
-        }
-        List<byte> BinaryStringToBytes(string bdata)
-        {
-            var BinaryData = new List<byte>();
-            for (int i = 0; i < bdata.Length; i += 8)
-            {
-                string oneByte = bdata.Substring(i, 8);
-                BinaryData.Add(Convert.ToByte(oneByte, 2));
-            }
-            return BinaryData;
+            Cryptor,
+            Decryptor
         }
     }
 }

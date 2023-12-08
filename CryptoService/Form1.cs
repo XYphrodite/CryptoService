@@ -8,13 +8,6 @@ namespace CryptoService
 {
     public partial class MainForm : Form
     {
-        List<byte> permutationTable = new List<byte>
-                {
-                    58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4,
-                    62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8,
-                    57, 49, 41, 33, 25, 17, 9, 1,  59, 51, 43, 35, 27, 19, 11, 3,
-                    61, 53, 45, 37, 29, 21, 13, 5, 63, 55, 47, 39, 31, 23, 15, 7
-                };
         List<byte> forKey = new List<byte>
                 {
                     57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18,
@@ -22,7 +15,7 @@ namespace CryptoService
                     63, 55, 47, 39, 31, 23, 15, 7, 62, 54, 46, 38, 30, 22,
                     14, 6, 61, 53, 45, 37, 29, 21, 13, 5, 28, 20, 12, 4
                 };
-        Dictionary<int, int> RoundShift = new Dictionary<int, int>
+        Dictionary<byte, byte> RoundShift = new Dictionary<byte, byte>
                 {
                     { 1, 1 },
                     { 2, 2 },
@@ -41,13 +34,13 @@ namespace CryptoService
                     { 15, 2 },
                     { 16, 1 }
                 };
-        List<int> keyCompression = new List<int>
+        List<byte> keyCompression = new List<byte>
                 {
                     14, 17, 11, 24, 1, 5, 3, 28, 15, 6, 21, 10, 23, 19, 12, 4,
                     26, 8, 16, 7, 27, 20, 13, 2, 41, 52, 31, 37, 47, 55, 30, 40,
                     51, 45, 33, 48, 44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32
                 };
-        List<int> Etable = new List<int>
+        List<byte> Etable = new List<byte>
                 {
                     32, 1, 2, 3, 4, 5,
                     4, 5, 6, 7, 8, 9,
@@ -117,7 +110,7 @@ namespace CryptoService
                         2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11
                     }
         };
-        List<int> PPermuation = new List<int>
+        List<byte> PPermuation = new List<byte>
                 {
                     16, 7, 20, 21, 29, 12, 28, 17,
                     1, 15, 23, 26, 5, 18, 31, 10,
@@ -125,8 +118,8 @@ namespace CryptoService
                     19, 13, 30, 6, 22, 11, 4, 25
                 };
 
-        DES_Crypt _des_Crypt = new DES_Crypt();
-        Encoding encoding = Encoding.UTF8;
+        private DES_Crypt _des_Crypt = new DES_Crypt(Encoding.UTF8);
+
 
         public MainForm()
         {
@@ -138,7 +131,7 @@ namespace CryptoService
             var key = GenerateKey();
             keyRTB.Text = Convert.ToBase64String(key) + Environment.NewLine;
             //encrypt
-            var encrypted = _des_Crypt.Encrypt(initTextRTB.Text, key, encoding);
+            var encrypted = _des_Crypt.Crypt(initTextRTB.Text, key, DES_Crypt.Mode.Cryptor);
             //set text
             ciphroTextRTB.Text = Convert.ToBase64String(encrypted.ToArray());
         }
