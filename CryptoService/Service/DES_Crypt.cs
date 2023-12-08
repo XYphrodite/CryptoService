@@ -48,6 +48,7 @@ namespace CryptoService.Service
                     words[i]
                 );
             }
+            return words.SelectMany(w => w);
 
         }
 
@@ -59,16 +60,25 @@ namespace CryptoService.Service
                     {
                         for (byte round = 0; round < 16; ++round)
                             round_feistel_cipher(ref N1, ref N2, keys48b[round]);
-                        swap(N1, N2);
+                        swap(ref N1, ref N2);
                         break;
                     }
                 case Mode.Decryptor:
                     {
                         for (byte round = 15; round >= 0; --round)
                             round_feistel_cipher(ref N1, ref N2, keys48b[round]);
-                        swap(N1, N2);
+                        swap(ref N1, ref N2);
                         break;
                     }
+            }
+
+
+
+            void swap(ref uint N1, ref uint N2)
+            {
+                uint temp = N1;
+                N1 = N2;
+                N2 = temp;
             }
         }
 
@@ -77,43 +87,66 @@ namespace CryptoService.Service
             uint temp = N2;
             N2 = func_F(N2, key48b) ^ N1;
             N1 = temp;
+
+            uint func_F(uint block32b, ulong key48b)
+            {
+                ulong block48b = expansion_permutation(block32b);
+                block48b ^= key48b;
+                block32b = substitutions(block48b);
+                return permutation(block32b);
+
+
+                uint permutation(uint block32b)
+                {
+                    uint new_block32b = 0;
+                    for (byte i = 0; i < 32; ++i)
+                        new_block32b |= ((block32b >> (32 - __P[i])) & 0x01) << (31 - i);
+                    return new_block32b;
+                }
+            }
         }
 
-        uint func_F(uint block32b, ulong key48b)
-        {
-            ulong block48b = expansion_permutation(block32b);
-            block48b ^= key48b;
-            block32b = substitutions(block48b);
-            return permutation(block32b);
-        }
+
         uint substitutions(ulong block48b)
         {
             IEnumerable<byte> blocks4b = new List<byte>(), blocks6b = new List<byte>();
             split_48bits_to_6bits(block48b, ref blocks6b);
             substitution_6bits_to_4bits(blocks6b, ref blocks4b);
             return join_4bits_to_32bits(blocks4b);
-        }
 
-        void split_48bits_to_6bits(ulong block48b, ref IEnumerable<byte> blocks6b)
-        {
-            for (byte i = 0; i < 8; ++i)
-                blocks6b.Append((byte)((block48b >> (58 - (i * 6))) << 2));
-        }
-        void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, ref IEnumerable<byte> blocks4b)
-        {
-            byte block2b, block4b;
-
-            for (byte i = 0, j = 0; i < 8; i += 2, ++j)
+            void split_48bits_to_6bits(ulong block48b, ref IEnumerable<byte> blocks6b)
             {
-                block2b = extreme_bits(blocks6b.ElementAt(i));
-                block4b = middle_bits(blocks6b.ElementAt(i));
-                blocks4b.Append(__Sbox[i][block2b][block4b]);
+                for (byte i = 0; i < 8; ++i)
+                    blocks6b.Append((byte)((block48b >> (58 - (i * 6))) << 2));
+            }
 
-                block2b = extreme_bits(blocks6b.ElementAt(i + 1));
-                block4b = middle_bits(blocks6b.ElementAt(i + 1));
-                blocks4b.Append((byte)((blocks4b.ElementAt(j) << 4) | __Sbox[i + 1][block2b][block4b]));
+            void substitution_6bits_to_4bits(IEnumerable<byte> blocks6b, ref IEnumerable<byte> blocks4b)
+            {
+                byte block2b, block4b;
+
+                for (byte i = 0, j = 0; i < 8; i += 2, ++j)
+                {
+                    block2b = extreme_bits(blocks6b.ElementAt(i));
+                    block4b = middle_bits(blocks6b.ElementAt(i));
+                    blocks4b.Append(__Sbox[i][block2b][block4b]);
+
+                    block2b = extreme_bits(blocks6b.ElementAt(i + 1));
+                    block4b = middle_bits(blocks6b.ElementAt(i + 1));
+                    blocks4b.Append((byte)((blocks4b.ElementAt(j) << 4) | __Sbox[i + 1][block2b][block4b]));
+                }
+            }
+
+            uint join_4bits_to_32bits(IEnumerable<byte> blocks4b)
+            {
+                uint block32b = 0;
+                for (byte p = 0; p < 8; ++p)
+                    block32b = (block32b << 8) | blocks4b.ElementAt(p);
+                return block32b;
             }
         }
+
+
+
         ulong join_8bits_to_64bits(IEnumerable<byte> blocks8b)
         {
             ulong block64b = 0;
@@ -121,13 +154,7 @@ namespace CryptoService.Service
                 block64b = (block64b << 8) | blocks8b.ElementAt(p);
             return block64b;
         }
-        uint join_4bits_to_32bits(IEnumerable<byte> blocks4b)
-        {
-            uint block32b = 0;
-            for (byte p = 0; p < 8; ++p)
-                block32b = (block32b << 8) | blocks4b.ElementAt(p);
-            return block32b;
-        }
+
 
         byte extreme_bits(byte block6b) => (byte)(((block6b >> 6) & 0x2) | ((block6b >> 2) & 0x1));
 
@@ -217,10 +244,7 @@ namespace CryptoService.Service
             }
             else wordsToEnc.Add(word);
         }
-        private void key_expansion(object v, ref ulong[] keys48b)
-        {
-            throw new NotImplementedException();
-        }
+
 
 
         private static readonly byte[] __IP =
@@ -298,6 +322,10 @@ namespace CryptoService.Service
         new List<byte>{2 , 1 , 14, 7 , 4 , 10, 8 , 13, 15, 12, 9 , 0 , 3 , 5 , 6 , 11},
     },
 };
+        private static readonly byte[] __P = {
+            16, 7 , 20, 21, 29, 12, 28, 17, 1 , 15, 23, 26, 5 , 18, 31, 10,
+            2 , 8 , 24, 14, 32, 27, 3 , 9 , 19, 13, 30, 6 , 22, 11, 4 , 25,
+        };
 
         public enum Mode : byte
         {
