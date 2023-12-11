@@ -8,7 +8,7 @@ namespace CryptoService
 {
     public partial class MainForm : Form
     {
-        private CryptoWorker cryptoWorker = new CryptoWorker(Encoding.UTF8);
+        private CryptWorker cryptWorker = new CryptWorker(Encoding.UTF8);
 
 
         public MainForm()
@@ -18,19 +18,24 @@ namespace CryptoService
 
         private void encryptBtnClick(object sender, EventArgs e)//enc
         {
-            var key = GenerateKey();
-            keyRTB.Text = Convert.ToBase64String(key) + Environment.NewLine;
-            //encrypt
-            var encrypted = cryptoWorker.des.Crypt(initTextRTB.Text, key, CryptoWorker.DES.Mode.Encryptor);
-            //set text
-            ciphroTextRTB.Text = Convert.ToBase64String(encrypted.ToArray());
+            //var key = GenerateKey();
+            //keyRTB.Text = Convert.ToBase64String(key) + Environment.NewLine;
+            ////encrypt
+            //var encrypted = cryptoWorker.des.Crypt(initTextRTB.Text, key, CryptoWorker.DES.Mode.Encryptor);
+            ////set text
+            //ciphroTextRTB.Text = Convert.ToBase64String(encrypted.ToArray());
+            var enc = cryptWorker.Encrypt(initTextRTB.Text);
+            ciphroTextRTB.Text = enc;
         }
 
         private void decryptBtnClick(object sender, EventArgs e)
         {
-            var key = ReadKey();
-            var decrypted = cryptoWorker.des.Crypt(ciphroTextRTB.Text, key, CryptoWorker.DES.Mode.Decryptor);
-            decryptedTextRTB.Text = cryptoWorker.des.GetText(decrypted.ToArray());
+            //var key = ReadKey();
+            //var decrypted = cryptoWorker.des.Crypt(ciphroTextRTB.Text, key, CryptWorker.DES.Mode.Decryptor);
+            //decryptedTextRTB.Text = cryptoWorker.des.GetText(decrypted.ToArray());
+            var text = ciphroTextRTB.Text;
+            var decText = cryptWorker.Decrypt(text);
+            decryptedTextRTB.Text = decText;
         }
 
         private byte[] GenerateKey()
